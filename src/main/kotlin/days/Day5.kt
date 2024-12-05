@@ -5,39 +5,19 @@ class Day5 : Day(5) {
     override fun partOne(): Int {
         val (rules, pages) = parse()
 
-        val validPages = mutableListOf<List<Int>>()
-        pages.forEach { page ->
-            if (isValidPage(page, rules)) {
-                validPages.add(page)
-            }
-        }
+        val validPages = pages.filter { getViolatingRule(it, rules) == null }
 
-        println()
-        println(validPages)
-
-        val middleValuesSum = validPages.sumOf { findMiddle(it) }
-
-        return middleValuesSum
-    }
-
-    private fun isValidPage(page: List<Int>, rules: List<Pair<Int, Int>>): Boolean {
-        page.forEachIndexed { index, number ->
-            rules.forEach { (first, second) ->
-                if (number == second && page.contains(first) && !page.subList(0, index).contains(first)) {
-                    println("Page: $page has $number with missing preceding number: $first")
-                    return false
-                }
-            }
-        }
-        return true
+        return validPages.sumOf { findMiddle(it) }
     }
 
     private fun getViolatingRule(page: List<Int>, rules: List<Pair<Int, Int>>): Pair<Int, Int>? {
         page.forEachIndexed { index, number ->
             rules.forEach { rule ->
+                // if the second number of the rule is on the page, AND first number is as well, we check the rule
                 if (number == rule.second && page.contains(rule.first)) {
+                    // check if the first number of the rule is before the second number on the page,
+                    // otherwise it's a violation and we return the rule
                     if (!page.subList(0, index).contains(rule.first)) {
-                        println("Page: $page has $number with missing preceding number: ${rule.first}")
                         return rule
                     }
                 }
@@ -54,30 +34,18 @@ class Day5 : Day(5) {
     override fun partTwo(): Int {
         val (rules, pages) = parse()
 
-        val invalidPages = mutableListOf<List<Int>>()
-        pages.forEach { page ->
-            if (!isValidPage(page, rules)) {
-                invalidPages.add(page)
-            }
-        }
-
-        println()
-        println(invalidPages)
-        val fixedPages = mutableListOf<List<Int>>()
+        val invalidPages = pages.filter { getViolatingRule(it, rules) != null }
 
         // correct these pages by swapping the numbers of the rules they violate
-        invalidPages.forEach { page ->
+        val fixedPages = invalidPages.map { page ->
+            var fixedPage = page
             var violatingRule = getViolatingRule(page, rules)
-            var fixedPage = page;
             while (violatingRule != null) {
                 fixedPage =
                     swap(fixedPage, fixedPage.indexOf(violatingRule.second), fixedPage.indexOf(violatingRule.first))
-                println("Page: $page violates $violatingRule")
-                println("Fixed page: $fixedPage")
-
                 violatingRule = getViolatingRule(fixedPage, rules)
             }
-            fixedPages.add(fixedPage)
+            fixedPage
         }
 
         val middleValuesSum = fixedPages.sumOf { findMiddle(it) }
@@ -85,7 +53,7 @@ class Day5 : Day(5) {
         return middleValuesSum
     }
 
-    fun swap(page: List<Int>, index1: Int, index2: Int): List<Int> {
+    private fun swap(page: List<Int>, index1: Int, index2: Int): List<Int> {
         val swappedPage = page.toMutableList()
         val temp = swappedPage[index1]
         swappedPage[index1] = page[index2]
@@ -98,8 +66,7 @@ class Day5 : Day(5) {
         val splitIndex = inputList.indexOf("")
         val rules = inputList.subList(0, splitIndex).map { Pair(it.split("|")[0].toInt(), it.split("|")[1].toInt()) }
         val manualPages = inputList.subList(splitIndex + 1, inputList.size).map { it.split(",").map { it.toInt() } }
-        println(rules)
-        println(manualPages)
+
         return Pair(rules, manualPages)
     }
 }
