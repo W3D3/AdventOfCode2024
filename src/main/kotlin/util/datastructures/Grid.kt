@@ -1,6 +1,6 @@
 package util.datastructures
 
-class Grid<T>(private val width: Int?, private val height: Int?, private val items: List<GridItem<T>>) {
+class Grid<T>(private val width: Int, private val height: Int, val items: List<GridItem<T>>) {
 
     fun getRows(): List<List<GridItem<T>>> {
         return items.groupBy { item -> item.pos.y }.map { it.value }
@@ -18,7 +18,9 @@ class Grid<T>(private val width: Int?, private val height: Int?, private val ite
         return items.groupBy { item -> item.pos.x + item.pos.y }.map { it.value }
     }
 
-    data class Point(val x: Int, val y: Int)
+    data class Point(val x: Int, val y: Int) {
+        operator fun plus(other: Point) = Point(x + other.x, y + other.y)
+    }
 
     data class GridItem<T>(val pos: Point, val value: T)
 
@@ -31,6 +33,11 @@ class Grid<T>(private val width: Int?, private val height: Int?, private val ite
 
     fun getValue(pos: Point): GridItem<T>? {
         return items.find { it.pos == pos }
+    }
+
+
+    fun getPoint(value: T): Point {
+        return items.find { it.value == value }!!.pos
     }
 
     fun getAdjecentGridPoints(point: Point, diagonal: Boolean): List<Point> {
@@ -49,5 +56,16 @@ class Grid<T>(private val width: Int?, private val height: Int?, private val ite
         }
 
         return ajecentPoints
+    }
+
+    override fun toString(): String {
+        val sb = StringBuilder()
+        for (row in getRows()) {
+            for (item in row) {
+                sb.append(item.value)
+            }
+            sb.append("\n")
+        }
+        return sb.toString()
     }
 }
