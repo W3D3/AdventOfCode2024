@@ -9,9 +9,9 @@ class Day7 : Day(7) {
 
     private fun parseInput(): List<EquationPuzzle> {
         val puzzles = inputList.map { line ->
-            var split = line.split(": ")
-            var result = split[0].toLong()
-            var numbers = split[1].split(" ").map { it.toLong() }
+            val split = line.split(": ")
+            val result = split[0].toLong()
+            val numbers = split[1].split(" ").map { it.toLong() }
             EquationPuzzle(result, numbers)
         }
 
@@ -19,26 +19,22 @@ class Day7 : Day(7) {
     }
 
     override fun partOne(): Long {
-        val input = parseInput();
-        var cnt = 0L;
-        for (puzzle in input) {
-            val isSolvable = isSolvable(puzzle)
-            if (isSolvable) {
-                println(puzzle.toString() + "is solvable")
-                cnt += puzzle.result
+        val equations = parseInput();
+        val sumOfSolvable = equations.sumOf { equation ->
+            if (isSolvable(equation, listOf(Operator.ADD, Operator.MULTIPLY))) {
+                equation.result
             } else {
-                println(puzzle.toString() + "is unsolvable")
-
+                0L
             }
         }
-        return cnt
+        return sumOfSolvable
     }
 
-    fun isSolvable(puzzle: EquationPuzzle): Boolean {
-        return isSolvableRec(puzzle.result, puzzle.numbers, listOf(Operator.ADD, Operator.MULTIPLY))
+    private fun isSolvable(puzzle: EquationPuzzle, allowedOperators: List<Operator>): Boolean {
+        return isSolvableRecursive(puzzle.result, puzzle.numbers, allowedOperators)
     }
 
-    fun isSolvableRec(goal: Long, numbersLeft: List<Long>, allowedOperators: List<Operator>): Boolean {
+    private fun isSolvableRecursive(goal: Long, numbersLeft: List<Long>, allowedOperators: List<Operator>): Boolean {
         require(numbersLeft. size >= 2) { "Cannot be! Wtf" }
         for (operator in allowedOperators) {
             val result = when (operator) {
@@ -62,7 +58,7 @@ class Day7 : Day(7) {
             if (newList.size < 2) {
                 continue;
             }
-            if (isSolvableRec(goal, newList, allowedOperators)) {
+            if (isSolvableRecursive(goal, newList, allowedOperators)) {
                 return true;
             }
         }
@@ -70,19 +66,15 @@ class Day7 : Day(7) {
     }
 
     override fun partTwo(): Long {
-        val input = parseInput();
-        var cnt = 0L;
-        for (puzzle in input) {
-            val isSolvable = isSolvableRec(puzzle.result, puzzle.numbers, listOf(Operator.ADD, Operator.MULTIPLY, Operator.CONCAT))
-            if (isSolvable) {
-                println(puzzle.toString() + "is solvable")
-                cnt += puzzle.result
+        val equations = parseInput();
+        val sumOfSolvable = equations.sumOf { equation ->
+            if (isSolvable(equation, listOf(Operator.ADD, Operator.MULTIPLY, Operator.CONCAT))) {
+                equation.result
             } else {
-                println(puzzle.toString() + "is unsolvable")
-
+                0L
             }
         }
-        return cnt
+        return sumOfSolvable
     }
 }
 
