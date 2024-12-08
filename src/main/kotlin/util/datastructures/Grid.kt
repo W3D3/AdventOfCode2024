@@ -1,6 +1,6 @@
 package util.datastructures
 
-class Grid<T>(private val width: Int, private val height: Int, val items: List<GridItem<T>>) {
+class Grid<T>(val width: Int, val height: Int, val items: List<GridItem<T>>) {
 
     fun getRows(): List<List<GridItem<T>>> {
         return items.groupBy { item -> item.pos.y }.map { it.value }
@@ -20,6 +20,8 @@ class Grid<T>(private val width: Int, private val height: Int, val items: List<G
 
     data class Point(val x: Int, val y: Int) {
         operator fun plus(other: Point) = Point(x + other.x, y + other.y)
+        operator fun minus(other: Point) = Point(x - other.x, y - other.y)
+        operator fun times(other: Int) = Point(x * other, y * other)
     }
 
     data class GridItem<T>(val pos: Point, val value: T)
