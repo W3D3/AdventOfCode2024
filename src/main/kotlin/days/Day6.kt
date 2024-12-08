@@ -1,6 +1,6 @@
 package days
 
-import util.datastructures.Grid
+import util.datastructures.*
 import util.datastructures.Grid.GridItem
 
 class Day6 : Day(6) {
@@ -67,81 +67,76 @@ class Day6 : Day(6) {
     }
 
     override fun partTwo(): Int {
-        val grid = parseInputGrid();
 
-
-        // up, right, down, left
-
-        var turnedAt = mutableSetOf<GuardPos>()
-
-        var guardPos = GuardPos(grid.getPoint('^'))
-
-        val path = mutableListOf(guardPos)
-        println("Guard is at ${guardPos.pos.x}, ${guardPos.pos.y}")
-
-
-        while (true) {
-            val nextPos = guardPos.pos + guardPos.direction;
-            if (grid.getValue(nextPos) == null) {
-//                println("Leaving map at ${nextPos.x}, ${nextPos.y}")
-                break;
-            }
-            if (grid.getValue(nextPos)?.value == '#') {
-//                println("Found wall at ${nextPos.x}, ${nextPos.y}")
-                turnedAt.add(guardPos)
-                guardPos = guardPos.rotateRight()
-//                println("Changing direction to ${guardPos.direction}")
-            } else {
-//                println("Moving to ${nextPos.x}, ${nextPos.y}")
-                guardPos = GuardPos(nextPos, guardPos.direction);
-            }
-            path.add(guardPos)
-        }
-
-        val gridItems = grid.items.map {
-            GridItem(
-                it.pos,
-                //it.pos in turnedAt.map { turnedPos -> turnedPos.pos }
-                if (it.pos in turnedAt.map { turnedPos -> turnedPos.pos }) {
-                    '+'
-                } else if (it.pos in path.map { path -> path.pos }) {
-                    '-'
-                } else {
-                    it.value
+        val tempMap = mutableMapOf<Point, Char>()
+        var actor: Actor? = null;
+        inputList.forEachIndexed { y, row ->
+            row.forEachIndexed { x, content ->
+                if (content == '^') {
+                    actor = Actor(Position(Point(x, y), Direction.UP), 'X')
                 }
-            )
+                tempMap[Point(x, y)] = if (content == '^') '.' else content
+            }
         }
-        val height = inputList.size;
-        val width = inputList.first().length;
-        val gridWithPath = Grid(width, height, gridItems);
+        val map = NavigatableMap<Char>(actor!!)
+        map.loadMap(tempMap)
 
-        println(grid)
-        println(gridWithPath)
-//        println(path)
-        println(turnedAt)
+        println(map)
 
-        val visited = mutableListOf<GuardPos>()
-        val validLoopPositons = mutableListOf<GuardPos>()
-        for (currentPath in path) {
-            visited.add(currentPath);
-            val potentialTurn = currentPath.rotateRight();
-            var walkingPos = potentialTurn
+        var inBounds = true
+        while (inBounds) {
+            val result = map.moveActor()
+            inBounds = result != MovementResult.OUT_OF_BOUNDS
+            if (result == MovementResult.WALL) {
+                map.turnActorRight()
+            }
+        }
+        println(map)
+        // filter path for only the points the actor has visited twice in different directions
+        val intersectionPoints = actor!!.path.filter { point -> actor!!.path.count { it == point } > 1 }
 
-            while (true) {
-                if (visited.contains(potentialTurn)) {
-                    println("Found loop at $potentialTurn")
-                    validLoopPositons.add(potentialTurn)
-                    break;
+        val startingPos = actor!!.path.first().point
+        val validPath = actor!!.path.toList()
+        var loopCount = 0
+        // make a list of list of all the points the actor has visited and set one to be an obstacle
+        validPath.forEachIndexed { index, potentialTurn ->
+            map.resetActor();
+//            println("Trying to turn at ${potentialTurn}")
+//            println(map)
+            if (potentialTurn.next().point == startingPos) {
+                println("Cannot place obstacle at ${potentialTurn.next().point}")
+                // skip turning if we would need to put an obstacle at the starting point
+                return@forEachIndexed
+            }
+
+            var inBounds = true
+            while (inBounds) {
+                if (map.actor.pos == potentialTurn && potentialTurn.next().point != startingPos) {
+//                    println("Pretending to be a wall at ${potentialTurn}")
+                    map.turnActorRight()
+                };
+                val result = map.moveActor()
+                inBounds = result != MovementResult.OUT_OF_BOUNDS
+
+                if (result == MovementResult.WALL) {
+                    map.turnActorRight()
                 }
-                walkingPos = walkingPos.move();
-                if (grid.getValue(walkingPos.pos) == null) {
-//                    println("Leaving map")
+                if (result == MovementResult.LOOPING) {
+                    println("Actor looping at ${actor!!.pos.point}")
+                    loopCount++;
                     break;
                 }
             }
+//            println(map)
+//            println("Actor left map at ${actor!!.pos.point}")
+
         }
 
-        return validLoopPositons.size;
+
+
+
+
+        return loopCount;
     }
 
     private fun parseInputGrid(): Grid<Char> {
